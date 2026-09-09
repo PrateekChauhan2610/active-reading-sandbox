@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Reading Sandbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col font-sans">
+    
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
+        <h1 class="text-xl font-bold text-gray-800">📚 Active Reading Sandbox</h1>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Document Pane -->
+        <div class="w-1/2 p-6 border-r flex flex-col bg-white">
+            <h2 class="text-lg font-semibold mb-4">1. Upload Document</h2>
+            <input type="file" id="pdf-upload" accept=".pdf" class="mb-4">
+            <div id="viewer" class="flex-1 overflow-y-auto p-4 bg-gray-50 border rounded text-sm text-gray-700 whitespace-pre-wrap">
+                Upload a PDF to view its contents here...
+            </div>
+        </div>
+
+        <!-- Tutor Pane -->
+        <div class="w-1/2 flex flex-col bg-gray-50">
+            <div class="p-6 bg-white border-b shadow-sm">
+                <h2 class="text-lg font-semibold">2. Ask the AI Tutor</h2>
+            </div>
+            
+            <div id="chat-history" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+            
+            <div class="p-4 bg-white border-t">
+                <form id="chat-form" class="flex gap-2">
+                    <input type="text" id="prompt" class="flex-1 border p-3 rounded" placeholder="E.g., Summarize the main argument..." disabled>
+                    <button type="submit" id="send-btn" class="bg-blue-600 text-white px-6 py-3 rounded font-medium disabled:opacity-50" disabled>Ask</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDocumentText = "";
+        
+        // Handle PDF Upload
+        document.getElementById('pdf-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const viewer = document.getElementById('viewer');
+            viewer.innerHTML = "<em>Extracting text...</em>";
+            
+            const formData = new FormData();
+            formData.append("file", file);
+            
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                currentDocumentText = data.text;
+                viewer.textContent = currentDocumentText;
+                
+                document.getElementById('prompt').disabled = false;
+                document.getElementById('send-btn').disabled = false;
+            } catch (err) {
+                viewer.innerHTML = `<span class="text-red-500">Error processing PDF.</span>`;
+            }
+        });
+
+        // Handle Chat Submission and Streaming
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const promptInput = document.getElementById('prompt');
+            const prompt = promptInput.value;
+            const apiKey = document.getElementById('api-key').value;
+            
+            if (!prompt || !currentDocumentText) return;
+            promptInput.value = "";
+            
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.innerHTML += `<div class="bg-blue-100 p-3 rounded-lg self-end max-w-[80%] ml-auto text-sm">${prompt}</div>`;
+            
+            const aiBubble = document.createElement('div');
+            aiBubble.className = "bg-white p-4 rounded-lg shadow-sm border max-w-[90%] text-sm text-gray-800 whitespace-pre-wrap";
+            chatHistory.appendChild(aiBubble);
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ document_text: currentDocumentText, prompt: prompt, api_key: apiKey })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    aiBubble.innerHTML = `<span class="text-red-500">Error: ${errorData.detail}</span>`;
+                    return;
+                }
+
+                // Read the stream chunk-by-chunk
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let aiMessage = "";
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    aiMessage += decoder.decode(value, { stream: true });
+                    aiBubble.textContent = aiMessage;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+            } catch (err) {
+                aiBubble.innerHTML = `<span class="text-red-500">Network Error.</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
