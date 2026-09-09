@@ -51,7 +51,7 @@ active-reading-sandbox/
 You can provide your Gemini API key in one of three ways:
 1. **Web UI:** Enter it in the top-right corner of the application before uploading a document.
 2. **Docker Compose:** Add your key to the `docker-compose.yml` file under the `environment` section: `GEMINI_API_KEY=your_key_here`.
-3. **Hardcoded (Local):** In `main.py`, replace line 43 (`api_key = request.api_key or os.getenv("GEMINI_API_KEY")`) with `api_key = "your_key_here"`.
+3. **Hardcoded (Local):** In `main.py`, replace line 43 (`api_key = "Your API Key"`) with `api_key = "your_key_here"`.
 
 ## 🛠️ Technology Stack
 - **Backend:** FastAPI, Python, PyPDF2
