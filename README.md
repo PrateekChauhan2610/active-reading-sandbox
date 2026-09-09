@@ -1,6 +1,6 @@
 # 📚 Active Reading Sandbox
 
-An AI-powered document tutor that transforms passive reading into an interactive learning experience. Built with **FastAPI**, **Vanilla JS/TailwindCSS**, and the **Google Gemini 2.5 Flash** model.
+An AI-powered document tutor that transforms passive reading into an interactive learning experience. Built with **FastAPI**, **Vanilla JS/TailwindCSS**, and the **Google Gemini 3.5 Flash** model.
 
 ## ✨ Features
 - **Upload & Read:** Seamlessly upload PDF documents and view extracted text.
@@ -55,7 +55,7 @@ You can provide your Gemini API key in one of three ways:
 
 ## 🛠️ Technology Stack
 - **Backend:** FastAPI, Python, PyPDF2
-- **AI Model:** Google Gemini 2.5 Flash (`google-genai` SDK)
+- **AI Model:** Google Gemini 3.5 Flash (`google-genai` SDK)
 - **Frontend:** HTML5, JavaScript (Fetch API), Tailwind CSS
 
 ## 📄 License
